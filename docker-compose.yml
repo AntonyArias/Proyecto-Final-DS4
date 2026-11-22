@@ -1,0 +1,56 @@
+name: ambiental-forestal
+services:
+  db:
+    image: mysql:9.7
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_password
+      MYSQL_DATABASE: gestion_ambiental
+      MYSQL_USER: ambiental
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+      TZ: UTC
+    ports:
+      - "127.0.0.1:3309:3306"
+    volumes:
+      - ./db_dumb:/docker-entrypoint-initdb.d:ro
+      - ./mysql_data:/var/lib/mysql
+    secrets: [db_password]
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$$(cat /run/secrets/db_password)" mysql -uambiental -Dgestion_ambiental -Nse "SELECT 1 FROM roles LIMIT 1"']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+  webdatos:
+    build:
+      context: .
+      dockerfile: ./Data/Dockerfile
+    volumes:
+      - ./Data/public:/var/www/html/public:ro
+      - ./Data/src:/var/www/html/src:ro
+      - ./Data/tests:/var/www/html/tests:ro
+      - ./db_dumb:/var/www/html/db_dumb:ro
+      - ./Data/.env:/var/www/html/.env:ro
+      - evidencias:/var/www/storage
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      db:
+        condition: service_healthy
+  webnegocio:
+    build:
+      context: .
+      dockerfile: ./Business/Dockerfile
+    volumes:
+      - ./Business/public:/var/www/html/public:ro
+      - ./Business/src:/var/www/html/src:ro
+      - ./Business/tests:/var/www/html/tests:ro
+      - ./Business/.env:/var/www/html/.env:ro
+    ports:
+      - "9091:80"
+    depends_on: [webdatos]
+  # Presentation/ y webpresentacion serán integrados por el rol de frontend.
+secrets:
+  db_password:
+    file: ./db_password.txt
+volumes:
+  evidencias:

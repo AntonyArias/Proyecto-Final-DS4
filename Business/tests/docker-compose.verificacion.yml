@@ -1,0 +1,16 @@
+# Se usa junto con el Compose raíz y -p ambiental-verificacion.
+# Sustituye las publicaciones y los volúmenes para una prueba limpia aislada.
+services:
+  db:
+    ports: !reset []
+    volumes:
+      - verificacion_mysql:/var/lib/mysql
+  webdatos:
+    ports: !reset []
+    volumes:
+      - verificacion_evidencias:/var/www/storage
+  webnegocio:
+    ports: !reset []
+volumes:
+  verificacion_mysql:
+  verificacion_evidencias:

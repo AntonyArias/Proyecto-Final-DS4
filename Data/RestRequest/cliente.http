@@ -1,0 +1,12 @@
+# Diagnóstico interno del backend. No entregar X-Internal-Key al frontend.
+@host = http://127.0.0.1:8081/api
+@internal = COLOCAR_CLAVE_LOCAL_DE_DATA_ENV
+@token = COLOCAR_TOKEN_DEVUELTO_POR_BUSINESS
+
+### Sin clave interna debe devolver 403
+GET {{host}}/cliente
+
+### Solo para comprobar el canal interno autorizado
+GET {{host}}/cliente/filter/0/20?nombre=&cedula=
+X-Internal-Key: {{internal}}
+Authorization: Bearer {{token}}

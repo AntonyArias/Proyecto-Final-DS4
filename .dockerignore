@@ -1,0 +1,11 @@
+.git
+mysql_data
+**/vendor
+**/.env
+db_password.txt
+**/node_modules
+**/dist
+**/.angular
+**/build
+**/.gradle
+**/storage

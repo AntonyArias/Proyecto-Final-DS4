@@ -1,0 +1,16 @@
+Business/vendor/
+Data/vendor/
+Business/.env
+Data/.env
+db_password.txt
+mysql_data/
+Data/storage/
+node_modules/
+vendor/
+dist/
+.angular/
+build/
+.gradle/
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,5955 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Gestión ambiental y forestal — Backend",
+    "version": "1.0.0",
+    "description": "Arquitectura de CitasMedicas: Business → DataService/Guzzle → Data → Eloquent/MySQL. Cliente web/Android debe consumir solo Business. Roles: Admin=1, Tecnico=2, Cliente=3. Fechas ISO 8601 en UTC; montos CRC como texto decimal. Una sesión activa por usuario; nuevo login y refresh rotan la sesión. El frontend/Android y su cola offline corresponden al otro rol. Las fracciones de segundo de JavaScript se aceptan y normalizan a segundos UTC."
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Business en el mismo servidor (local: http://localhost:9091/api)"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Comprobar Business, Data y MySQL",
+        "operationId": "get__health",
+        "description": "",
+        "tags": [
+          "Sistema"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "database": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "data",
+                    "database"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Iniciar sesión",
+        "operationId": "post__auth_login",
+        "description": "Devuelve token y tkRef como en la base, más expires_in y user. No registrar las credenciales ni tokens en consola.",
+        "tags": [
+          "Autenticación"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Login"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Renovar y rotar la sesión",
+        "operationId": "post__auth_refresh",
+        "description": "Invalida ambos tokens anteriores. Un reintento con el refresh ya consumido devuelve 401. La renovación automática en frontend es opcional.",
+        "tags": [
+          "Autenticación"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Login"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tkRef": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tkRef"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Consultar usuario actual",
+        "operationId": "get__auth_me",
+        "description": "",
+        "tags": [
+          "Autenticación"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/auth/logout/{id}": {
+      "delete": {
+        "summary": "Cerrar sesión",
+        "operationId": "delete__auth_logout__id_",
+        "description": "Solo el propio usuario. Revoca acceso y refresco en Data. Ruta corregida respecto a loggout de la base.",
+        "tags": [
+          "Autenticación"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/public/servicio": {
+      "get": {
+        "summary": "Consultar catálogo público activo",
+        "operationId": "get__public_servicio",
+        "description": "",
+        "tags": [
+          "Público"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Solo endpoints públicos y reportes; el resto usa /filter/{offset}/{limit}."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Tamaño de página."
+          },
+          {
+            "name": "nombre",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "description": "Buscar por nombre"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Servicio"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": []
+      }
+    },
+    "/public/solicitud": {
+      "post": {
+        "summary": "Solicitar cotización",
+        "operationId": "post__public_solicitud",
+        "description": "",
+        "tags": [
+          "Público"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Solicitud"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usuario": {
+      "get": {
+        "summary": "Listar usuario",
+        "operationId": "get__usuario",
+        "description": "Solo Admin. Página inicial de 20 registros.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Usuario"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear usuario",
+        "operationId": "post__usuario",
+        "description": "Solo Admin. ",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usuario/filter/{offset}/{limit}": {
+      "get": {
+        "summary": "Filtrar y paginar usuario",
+        "operationId": "get__usuario_filter__offset___limit_",
+        "description": "Solo Admin.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "nombre",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "description": "Buscar por username o nombre completo"
+          },
+          {
+            "name": "activo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            },
+            "description": "Estado activo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Usuario"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/usuario/{id}": {
+      "get": {
+        "summary": "Consultar usuario",
+        "operationId": "get__usuario__id_",
+        "description": "Solo Admin.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar usuario",
+        "operationId": "put__usuario__id_",
+        "description": "Solo Admin. Campos omitidos se conservan. Cambiar contraseña/rol/activo revoca la sesión; se impide degradar/desactivar la propia cuenta.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioUpdate"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar o anular usuario",
+        "operationId": "delete__usuario__id_",
+        "description": "Solo Admin. Si tiene relaciones, devuelve 409; puede desactivar con activo=false. Eliminar cliente no elimina su cuenta de usuario.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/cliente": {
+      "get": {
+        "summary": "Listar cliente",
+        "operationId": "get__cliente",
+        "description": "Solo Admin. Página inicial de 20 registros.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Cliente"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear cliente",
+        "operationId": "post__cliente",
+        "description": "Solo Admin. ",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cliente"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cliente/filter/{offset}/{limit}": {
+      "get": {
+        "summary": "Filtrar y paginar cliente",
+        "operationId": "get__cliente_filter__offset___limit_",
+        "description": "Solo Admin.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "nombre",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "description": "Buscar por username o nombre completo"
+          },
+          {
+            "name": "activo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            },
+            "description": "Estado activo"
+          },
+          {
+            "name": "cedula",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            },
+            "description": "Buscar identificación"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Cliente"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/cliente/{id}": {
+      "get": {
+        "summary": "Consultar cliente",
+        "operationId": "get__cliente__id_",
+        "description": "Solo Admin.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cliente"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar cliente",
+        "operationId": "put__cliente__id_",
+        "description": "Solo Admin. Campos omitidos se conservan. ",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cliente"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteUpdate"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar o anular cliente",
+        "operationId": "delete__cliente__id_",
+        "description": "Solo Admin. Si tiene relaciones, devuelve 409; puede desactivar con activo=false. Eliminar cliente no elimina su cuenta de usuario.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/servicio": {
+      "get": {
+        "summary": "Listar servicio",
+        "operationId": "get__servicio",
+        "description": "Solo Admin. Página inicial de 20 registros.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Servicio"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear servicio",
+        "operationId": "post__servicio",
+        "description": "Solo Admin. ",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Servicio"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicioInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/servicio/filter/{offset}/{limit}": {
+      "get": {
+        "summary": "Filtrar y paginar servicio",
+        "operationId": "get__servicio_filter__offset___limit_",
+        "description": "Solo Admin.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "nombre",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "description": "Buscar por username o nombre completo"
+          },
+          {
+            "name": "activo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            },
+            "description": "Estado activo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Servicio"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/servicio/{id}": {
+      "get": {
+        "summary": "Consultar servicio",
+        "operationId": "get__servicio__id_",
+        "description": "Solo Admin.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Servicio"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar servicio",
+        "operationId": "put__servicio__id_",
+        "description": "Solo Admin. Campos omitidos se conservan. ",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Servicio"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicioUpdate"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar o anular servicio",
+        "operationId": "delete__servicio__id_",
+        "description": "Solo Admin. Si tiene relaciones, devuelve 409; puede desactivar con activo=false. Eliminar cliente no elimina su cuenta de usuario.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/solicitud": {
+      "get": {
+        "summary": "Listar solicitud",
+        "operationId": "get__solicitud",
+        "description": "Solo Admin. Página inicial de 20 registros.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Solicitud"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/solicitud/filter/{offset}/{limit}": {
+      "get": {
+        "summary": "Filtrar y paginar solicitud",
+        "operationId": "get__solicitud_filter__offset___limit_",
+        "description": "Solo Admin.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            },
+            "description": "Recibida o Cotizada"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Solicitud"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/solicitud/{id}": {
+      "get": {
+        "summary": "Consultar solicitud",
+        "operationId": "get__solicitud__id_",
+        "description": "Solo Admin.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Solicitud"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/cotizacion": {
+      "get": {
+        "summary": "Listar cotizacion",
+        "operationId": "get__cotizacion",
+        "description": "Admin o Cliente propietario; Tecnico recibe 403. Página inicial de 20 registros.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Cotizacion"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear cotizacion",
+        "operationId": "post__cotizacion",
+        "description": "Solo Admin. Un servicio por cotización, monto positivo CRC; nace en Cotizacion.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cotizacion"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cotizacion/filter/{offset}/{limit}": {
+      "get": {
+        "summary": "Filtrar y paginar cotizacion",
+        "operationId": "get__cotizacion_filter__offset___limit_",
+        "description": "Admin o Cliente propietario; Tecnico recibe 403.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            },
+            "description": "Estado"
+          },
+          {
+            "name": "cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Cliente"
+          },
+          {
+            "name": "servicio_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Servicio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Cotizacion"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/cotizacion/{id}": {
+      "get": {
+        "summary": "Consultar cotizacion",
+        "operationId": "get__cotizacion__id_",
+        "description": "Admin o Cliente propietario; Tecnico recibe 403.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cotizacion"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar cotizacion",
+        "operationId": "put__cotizacion__id_",
+        "description": "Solo Admin. Campos omitidos se conservan. Solo borrador Cotizacion.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Cotizacion"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CotizacionUpdate"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar o anular cotizacion",
+        "operationId": "delete__cotizacion__id_",
+        "description": "Solo Admin. Solo se elimina borrador Cotizacion.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mensaje"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/proyecto": {
+      "get": {
+        "summary": "Listar proyecto",
+        "operationId": "get__proyecto",
+        "description": "Admin: todos. Tecnico: asignados. Cliente: propios. Fuera de alcance: 404. Página inicial de 20 registros.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Proyecto"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/proyecto/filter/{offset}/{limit}": {
+      "get": {
+        "summary": "Filtrar y paginar proyecto",
+        "operationId": "get__proyecto_filter__offset___limit_",
+        "description": "Admin: todos. Tecnico: asignados. Cliente: propios. Fuera de alcance: 404.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            },
+            "description": "Estado"
+          },
+          {
+            "name": "cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Cliente"
+          },
+          {
+            "name": "servicio_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Servicio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Proyecto"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/proyecto/{id}": {
+      "get": {
+        "summary": "Consultar proyecto",
+        "operationId": "get__proyecto__id_",
+        "description": "Admin: todos. Tecnico: asignados. Cliente: propios. Fuera de alcance: 404.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Proyecto"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar el nombre del proyecto",
+        "operationId": "put_proyecto_id",
+        "tags": [
+          "Gestión"
+        ],
+        "description": "Solo Admin; modifica nombre. El estado se cambia exclusivamente en /proyecto/{id}/estado.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proyecto actualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Proyecto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/pago": {
+      "get": {
+        "summary": "Listar pago",
+        "operationId": "get__pago",
+        "description": "Admin o Cliente propietario; Tecnico recibe 403. Página inicial de 20 registros.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Pago"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear pago",
+        "operationId": "post__pago",
+        "description": "Solo Admin. Pagos parciales separados por Anticipo/Final. Total Recibido no supera lo cotizado. Final recibido requiere Facturada.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Pago"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagoInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pago/filter/{offset}/{limit}": {
+      "get": {
+        "summary": "Filtrar y paginar pago",
+        "operationId": "get__pago_filter__offset___limit_",
+        "description": "Admin o Cliente propietario; Tecnico recibe 403.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "proyecto_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Proyecto autorizado"
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Inicio inclusivo."
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Fin inclusivo."
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Anticipo",
+                "Final"
+              ]
+            },
+            "description": "Hito"
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            },
+            "description": "Estado"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Pago"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/pago/{id}": {
+      "get": {
+        "summary": "Consultar pago",
+        "operationId": "get__pago__id_",
+        "description": "Admin o Cliente propietario; Tecnico recibe 403.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Pago"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar pago",
+        "operationId": "put__pago__id_",
+        "description": "Solo Admin. Campos omitidos se conservan. Solo Pendiente; el proyecto del pago no cambia.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Pago"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagoUpdate"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar o anular pago",
+        "operationId": "delete__pago__id_",
+        "description": "Solo Admin. Anula conservando el registro y su historial; no borra filas.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Pago"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/visita": {
+      "get": {
+        "summary": "Listar visita",
+        "operationId": "get__visita",
+        "description": "Admin: todos. Tecnico: asignados. Cliente: propios. Fuera de alcance: 404. Página inicial de 20 registros.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Visita"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Sincronizar visita offline",
+        "operationId": "post__visita",
+        "description": "Solo Tecnico asignado. UUID estable; mismo contenido normalizado devuelve 200; otro contenido/autor con el UUID devuelve 409. Se conservan la hora de captura y la de recepción. Visitas inmutables. Puede sincronizar después del cierre del proyecto si aún está asignado, para no perder capturas offline.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Reintento equivalente: mismo registro, repetido=true.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sincronizacion"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sincronizacion"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisitaInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/visita/filter/{offset}/{limit}": {
+      "get": {
+        "summary": "Filtrar y paginar visita",
+        "operationId": "get__visita_filter__offset___limit_",
+        "description": "Admin: todos. Tecnico: asignados. Cliente: propios. Fuera de alcance: 404.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "proyecto_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Proyecto autorizado"
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Inicio inclusivo."
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Fin inclusivo."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Visita"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/visita/{id}": {
+      "get": {
+        "summary": "Consultar visita",
+        "operationId": "get__visita__id_",
+        "description": "Admin: todos. Tecnico: asignados. Cliente: propios. Fuera de alcance: 404.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Visita"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/cotizacion/{id}/estado": {
+      "post": {
+        "summary": "Enviar, aprobar o rechazar cotización",
+        "operationId": "post__cotizacion__id__estado",
+        "description": "Solo Admin. Cotizacion → Enviada/Rechazada; Enviada → Aprobada/Rechazada. Aprobar crea un único proyecto en transacción; repetir devuelve el mismo proyecto con repetido=true.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "cotizacion": {
+                          "$ref": "#/components/schemas/Cotizacion"
+                        },
+                        "proyecto": {
+                          "$ref": "#/components/schemas/Proyecto"
+                        },
+                        "repetido": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "cotizacion"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "estado": {
+                    "type": "string",
+                    "enum": [
+                      "Enviada",
+                      "Aprobada",
+                      "Rechazada"
+                    ]
+                  }
+                },
+                "required": [
+                  "estado"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proyecto/{id}/tecnico": {
+      "post": {
+        "summary": "Asignar técnico",
+        "operationId": "post__proyecto__id__tecnico",
+        "description": "Solo Admin. Debe ser Tecnico activo. Repetir no duplica asignación. No se agregan técnicos a proyectos Facturada.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Proyecto"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tecnico_id": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "tecnico_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proyecto/{id}/estado": {
+      "post": {
+        "summary": "Avanzar estado del proyecto",
+        "operationId": "post__proyecto__id__estado",
+        "description": "Solo Admin. Aprobada → En campo exige asignación; → Informe entregado exige informe_referencia; → Facturada exige factura_referencia. Sin saltos/retrocesos. El anticipo no es un bloqueo obligatorio de salida a campo.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Proyecto"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "estado": {
+                    "type": "string",
+                    "enum": [
+                      "En campo",
+                      "Informe entregado",
+                      "Facturada"
+                    ]
+                  },
+                  "informe_referencia": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "factura_referencia": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "estado"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/visita/uuid/{uuid}": {
+      "get": {
+        "summary": "Consultar visita por UUID",
+        "operationId": "get__visita_uuid__uuid_",
+        "description": "Alcance por proyecto; el detalle incluye las fotos sincronizadas.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Visita"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/visita/{id}/evidencia": {
+      "post": {
+        "summary": "Sincronizar una fotografía",
+        "operationId": "post__visita__id__evidencia",
+        "description": "Solo Tecnico autor y asignado. Máximo cinco fotos, 5 MiB y 25 megapíxeles por foto, JPEG/PNG/WebP verificados. Misma UUID y mismos bytes → 200; diferentes bytes → 409. Fotos separadas permiten recuperar cargas interrumpidas.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reintento de los mismos bytes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sincronizacion"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sincronizacion"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "archivo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "uuid",
+                  "archivo"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evidencia/{id}": {
+      "get": {
+        "summary": "Descargar evidencia protegida",
+        "operationId": "get__evidencia__id_",
+        "description": "Admin, Cliente propietario o Tecnico asignado. Almacenamiento fuera de public/.",
+        "tags": [
+          "Gestión"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo binario.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/reporte/ingresos": {
+      "get": {
+        "summary": "Reporte: ingresos",
+        "operationId": "get__reporte_ingresos",
+        "description": "Solo Admin/Cliente propietario; suma pagos Recibido según fecha_pago. Anulados/Pendiente no cuentan.",
+        "tags": [
+          "Reportes"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Solo endpoints públicos y reportes; el resto usa /filter/{offset}/{limit}."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Tamaño de página."
+          },
+          {
+            "name": "cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Cliente"
+          },
+          {
+            "name": "servicio_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Servicio"
+          },
+          {
+            "name": "proyecto_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Proyecto"
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Inicio inclusivo."
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Fin inclusivo."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Ingreso"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/reporte/proyectos-estado": {
+      "get": {
+        "summary": "Reporte: proyectos-estado",
+        "operationId": "get__reporte_proyectos_estado",
+        "description": "Conteo por estado actual y alcance del rol.",
+        "tags": [
+          "Reportes"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Solo endpoints públicos y reportes; el resto usa /filter/{offset}/{limit}."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Tamaño de página."
+          },
+          {
+            "name": "cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Cliente"
+          },
+          {
+            "name": "servicio_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Servicio"
+          },
+          {
+            "name": "proyecto_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Proyecto"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Estados"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/reporte/visitas": {
+      "get": {
+        "summary": "Reporte: visitas",
+        "operationId": "get__reporte_visitas",
+        "description": "Conteo por proyecto según fecha_captura; el listado detallado está en /visita/filter/{offset}/{limit}.",
+        "tags": [
+          "Reportes"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Solo endpoints públicos y reportes; el resto usa /filter/{offset}/{limit}."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Tamaño de página."
+          },
+          {
+            "name": "cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Cliente"
+          },
+          {
+            "name": "servicio_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Servicio"
+          },
+          {
+            "name": "proyecto_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Proyecto"
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Inicio inclusivo."
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Fin inclusivo."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/VisitasReporte"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/reporte/mapa": {
+      "get": {
+        "summary": "Reporte: mapa",
+        "operationId": "get__reporte_mapa",
+        "description": "Puntos GPS sincronizados; alcance por proyecto. El cliente debe recorrer las páginas.",
+        "tags": [
+          "Reportes"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Solo endpoints públicos y reportes; el resto usa /filter/{offset}/{limit}."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Tamaño de página."
+          },
+          {
+            "name": "cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Cliente"
+          },
+          {
+            "name": "servicio_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Servicio"
+          },
+          {
+            "name": "proyecto_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Proyecto"
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Inicio inclusivo."
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-11-22T14:30:00Z"
+            },
+            "description": "Fin inclusivo."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Mapa"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "example": {
+          "error": "Operación no autorizada para este rol."
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "offset",
+          "limit",
+          "total"
+        ]
+      },
+      "LoginInput": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16,
+            "example": "adminforestal"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "Forestal2026!"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      },
+      "UsuarioInput": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 16,
+            "pattern": "^[a-z0-9]{8,16}$"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8,
+            "maxLength": 64,
+            "description": "Mayúscula, minúscula, dígito y carácter @$!%*?&."
+          },
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "rol_id": {
+            "type": "integer",
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "nombre_completo",
+          "email",
+          "rol_id"
+        ]
+      },
+      "ClienteInput": {
+        "type": "object",
+        "properties": {
+          "usuario_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "cedula": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 30,
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 500,
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cedula",
+          "nombre_completo",
+          "email"
+        ]
+      },
+      "ServicioInput": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "nombre",
+          "descripcion"
+        ]
+      },
+      "SolicitudInput": {
+        "type": "object",
+        "properties": {
+          "servicio_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 30,
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          }
+        },
+        "required": [
+          "servicio_id",
+          "nombre_completo",
+          "email",
+          "descripcion"
+        ]
+      },
+      "CotizacionInput": {
+        "type": "object",
+        "properties": {
+          "solicitud_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "cliente_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "servicio_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,9})(\\.[0-9]{1,2})?$",
+            "example": "150000.00",
+            "description": "Monto positivo en CRC; texto decimal exacto."
+          },
+          "moneda": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          }
+        },
+        "required": [
+          "cliente_id",
+          "servicio_id",
+          "descripcion",
+          "monto"
+        ]
+      },
+      "PagoInput": {
+        "type": "object",
+        "properties": {
+          "proyecto_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "Anticipo",
+              "Final"
+            ]
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,9})(\\.[0-9]{1,2})?$",
+            "example": "150000.00",
+            "description": "Monto positivo en CRC; texto decimal exacto."
+          },
+          "moneda": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Pendiente",
+              "Recibido"
+            ]
+          },
+          "fecha_pago": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "referencia": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          }
+        },
+        "required": [
+          "proyecto_id",
+          "tipo",
+          "monto",
+          "estado",
+          "fecha_pago",
+          "referencia"
+        ]
+      },
+      "VisitaInput": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proyecto_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "fecha_captura": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "observaciones": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "latitud": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitud": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          }
+        },
+        "required": [
+          "uuid",
+          "proyecto_id",
+          "fecha_captura",
+          "observaciones",
+          "latitud",
+          "longitud"
+        ]
+      },
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "rol_id": {
+            "type": "integer",
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "nombre_completo",
+          "email",
+          "rol_id",
+          "activo"
+        ]
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "tkRef": {
+            "type": "string"
+          },
+          "expires_in": {
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/Usuario"
+          }
+        },
+        "required": [
+          "token",
+          "tkRef",
+          "expires_in",
+          "user"
+        ]
+      },
+      "UsuarioUpdate": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 16,
+            "pattern": "^[a-z0-9]{8,16}$"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8,
+            "maxLength": 64,
+            "description": "Mayúscula, minúscula, dígito y carácter @$!%*?&."
+          },
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "rol_id": {
+            "type": "integer",
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ClienteUpdate": {
+        "type": "object",
+        "properties": {
+          "usuario_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "cedula": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 30,
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 500,
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ServicioUpdate": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CotizacionUpdate": {
+        "type": "object",
+        "properties": {
+          "solicitud_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "cliente_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "servicio_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,9})(\\.[0-9]{1,2})?$",
+            "example": "150000.00",
+            "description": "Monto positivo en CRC; texto decimal exacto."
+          },
+          "moneda": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          }
+        }
+      },
+      "PagoUpdate": {
+        "type": "object",
+        "properties": {
+          "proyecto_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "Anticipo",
+              "Final"
+            ]
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,9})(\\.[0-9]{1,2})?$",
+            "example": "150000.00",
+            "description": "Monto positivo en CRC; texto decimal exacto."
+          },
+          "moneda": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Pendiente",
+              "Recibido"
+            ]
+          },
+          "fecha_pago": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "referencia": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          }
+        }
+      },
+      "Cliente": {
+        "type": "object",
+        "properties": {
+          "usuario_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "cedula": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 30,
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 500,
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "cedula",
+          "nombre_completo",
+          "email",
+          "activo"
+        ]
+      },
+      "Servicio": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "descripcion",
+          "activo"
+        ]
+      },
+      "Solicitud": {
+        "type": "object",
+        "properties": {
+          "servicio_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "nombre_completo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 30,
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Recibida",
+              "Cotizada"
+            ]
+          },
+          "fecha_registro": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          }
+        },
+        "required": [
+          "servicio_id",
+          "nombre_completo",
+          "email",
+          "descripcion"
+        ]
+      },
+      "Cotizacion": {
+        "type": "object",
+        "properties": {
+          "solicitud_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "cliente_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "servicio_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,9})(\\.[0-9]{1,2})?$",
+            "example": "150000.00",
+            "description": "Monto positivo en CRC; texto decimal exacto."
+          },
+          "moneda": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Cotizacion",
+              "Enviada",
+              "Aprobada",
+              "Rechazada"
+            ]
+          },
+          "creado_por": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "aprobado_por": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "fecha_aprobacion": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z",
+            "nullable": true
+          },
+          "fecha_registro": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "historial": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "cliente_id",
+          "servicio_id",
+          "descripcion",
+          "monto",
+          "estado"
+        ]
+      },
+      "Proyecto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "cotizacion_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Aprobada",
+              "En campo",
+              "Informe entregado",
+              "Facturada"
+            ]
+          },
+          "cliente_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "servicio_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "cliente": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,9})(\\.[0-9]{1,2})?$",
+            "example": "150000.00",
+            "description": "Monto positivo en CRC; texto decimal exacto."
+          },
+          "moneda": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          },
+          "informe_referencia": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "nullable": true
+          },
+          "factura_referencia": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150,
+            "nullable": true
+          },
+          "fecha_registro": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "tecnicos": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "historial": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "cotizacion_id",
+          "nombre",
+          "estado"
+        ]
+      },
+      "Pago": {
+        "type": "object",
+        "properties": {
+          "proyecto_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "Anticipo",
+              "Final"
+            ]
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,9})(\\.[0-9]{1,2})?$",
+            "example": "150000.00",
+            "description": "Monto positivo en CRC; texto decimal exacto."
+          },
+          "moneda": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "Pendiente",
+              "Recibido",
+              "Anulado"
+            ]
+          },
+          "fecha_pago": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "referencia": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "registrado_por": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "fecha_registro": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "historial": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "proyecto_id",
+          "tipo",
+          "monto",
+          "estado",
+          "fecha_pago",
+          "referencia"
+        ]
+      },
+      "Evidencia": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "visita_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "mime": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ]
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5242880
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "fecha_registro": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "visita_id",
+          "uuid",
+          "nombre",
+          "mime",
+          "bytes",
+          "sha256",
+          "fecha_registro"
+        ]
+      },
+      "Visita": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proyecto_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "fecha_captura": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "observaciones": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "latitud": {
+            "type": "string",
+            "example": "9.9000000"
+          },
+          "longitud": {
+            "type": "string",
+            "example": "-84.1000000"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "tecnico_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "fecha_registro": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "evidencias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Evidencia"
+            }
+          }
+        },
+        "required": [
+          "uuid",
+          "proyecto_id",
+          "fecha_captura",
+          "observaciones",
+          "latitud",
+          "longitud"
+        ]
+      },
+      "Sincronizacion": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Visita"
+          },
+          "repetido": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "data",
+          "repetido"
+        ]
+      },
+      "Ingreso": {
+        "type": "object",
+        "properties": {
+          "cliente_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "servicio_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "servicio": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "moneda": {
+            "type": "string",
+            "enum": [
+              "CRC"
+            ]
+          },
+          "total_recibido": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,9})(\\.[0-9]{1,2})?$",
+            "example": "150000.00",
+            "description": "Monto positivo en CRC; texto decimal exacto."
+          },
+          "cantidad_pagos": {
+            "type": "integer"
+          },
+          "cliente": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          }
+        },
+        "required": [
+          "cliente_id",
+          "cliente",
+          "servicio_id",
+          "servicio",
+          "moneda",
+          "total_recibido",
+          "cantidad_pagos"
+        ]
+      },
+      "Estados": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "estado",
+          "total"
+        ]
+      },
+      "VisitasReporte": {
+        "type": "object",
+        "properties": {
+          "proyecto_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "proyecto": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "total_visitas": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "proyecto_id",
+          "proyecto",
+          "total_visitas"
+        ]
+      },
+      "Mapa": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proyecto_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "proyecto": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "fecha_captura": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-22T14:30:00Z"
+          },
+          "latitud": {
+            "type": "string"
+          },
+          "longitud": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "uuid",
+          "proyecto_id",
+          "proyecto",
+          "fecha_captura",
+          "latitud",
+          "longitud"
+        ]
+      },
+      "Mensaje": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Error general en error; errores por campo en errors.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,713 @@
+# Pruebas positivas de la API Business (extensión REST Client de VS Code).
+# Requisitos: Docker iniciado y semillas locales cargadas (Data/tests/seed.php).
+# Ejecutar cada "Send Request" UNA VEZ, de arriba hacia abajo, sin saltar pasos.
+# Para repetir el recorrido, empezar desde 01: se crean datos ficticios nuevos.
+# Los IDs, usuarios y UUID se toman de las respuestas; no copiar IDs de otra ejecución.
+# No repetir estados ni pagos ya confirmados: sus reglas siguen aplicándose.
+# Las respuestas de solicitudes con @name deben conservarse en esta sesión del editor.
+# El paso de refresco invalida el token anterior: por eso está al final.
+#
+# Cobertura: todas las operaciones publicadas, con GET, POST, los seis PUT y DELETE.
+# No hay DELETE de proyectos/visitas ni PUT de visitas/solicitudes: se conserva historial.
+# DELETE de pago ANULA el registro. Las demás eliminaciones usan datos sin relaciones.
+# El escenario comercial queda guardado como demostración (total recibido: CRC 150000).
+# Archivo para multipart: ./archivos/foto-prueba.png (imagen ficticia incluida).
+# Sintaxis de variables y archivos: https://github.com/Huachao/vscode-restclient
+#
+@host = http://localhost:9091/api
+@token = {{login.response.body.$.token}}
+@clienteId = {{cliente.response.body.$.data.id}}
+@servicioId = {{servicio.response.body.$.data.id}}
+@cotizacionId = {{cotizacion.response.body.$.data.id}}
+@proyectoId = {{aprobacion.response.body.$.data.proyecto.id}}
+@tokenTecnico = {{loginTecnico.response.body.$.token}}
+@visitaId = {{visita.response.body.$.data.id}}
+
+### 01. Comprobar API y base de datos
+# Esperado: 200
+GET {{host}}/health
+
+### 02. Consultar documentación Swagger
+# Esperado: 200
+GET {{host}}/docs
+
+### 03. Consultar contrato OpenAPI
+# Esperado: 200
+GET {{host}}/openapi.json
+
+### 04. Consultar catálogo público
+# Esperado: 200
+GET {{host}}/public/servicio
+
+### 05. Iniciar sesión del administrador local
+# Esperado: 200
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "adminforestal",
+  "password": "Forestal2026!"
+}
+
+### 06. Consultar sesión actual
+# Esperado: 200
+GET {{host}}/auth/me
+Authorization: Bearer {{token}}
+
+### 07. Crear usuario temporal para CRUD
+# Esperado: 201
+# @name usuarioTemporal
+POST {{host}}/usuario
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "username": "tmp{{$randomInt 100000000 999999999}}",
+  "password": "Forestal2026!",
+  "nombre_completo": "Usuario temporal de prueba",
+  "email": "{{$guid}}@example.test",
+  "rol_id": 3
+}
+
+### 08. Listar usuarios
+# Esperado: 200
+GET {{host}}/usuario
+Authorization: Bearer {{token}}
+
+### 09. Consultar usuario temporal
+# Esperado: 200
+GET {{host}}/usuario/{{usuarioTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 10. Filtrar usuarios con paginación
+# Esperado: 200
+GET {{host}}/usuario/filter/0/20
+Authorization: Bearer {{token}}
+
+### 11. Actualizar usuario temporal con PUT
+# Esperado: 200
+PUT {{host}}/usuario/{{usuarioTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre_completo": "Usuario temporal actualizado"
+}
+
+### 12. Eliminar usuario sin relaciones
+# Esperado: 200
+DELETE {{host}}/usuario/{{usuarioTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 13. Crear cliente temporal para CRUD
+# Esperado: 201
+# @name clienteTemporal
+POST {{host}}/cliente
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cedula": "TMP-{{$timestamp}}-{{$randomInt 1000 9999}}",
+  "nombre_completo": "Cliente temporal",
+  "email": "{{$guid}}@example.test"
+}
+
+### 14. Listar clientes
+# Esperado: 200
+GET {{host}}/cliente
+Authorization: Bearer {{token}}
+
+### 15. Consultar cliente temporal
+# Esperado: 200
+GET {{host}}/cliente/{{clienteTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 16. Filtrar clientes con paginación
+# Esperado: 200
+GET {{host}}/cliente/filter/0/20
+Authorization: Bearer {{token}}
+
+### 17. Actualizar cliente temporal con PUT
+# Esperado: 200
+PUT {{host}}/cliente/{{clienteTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "telefono": "2222-0000",
+  "direccion": "Dirección ficticia actualizada"
+}
+
+### 18. Eliminar cliente sin cotizaciones
+# Esperado: 200
+DELETE {{host}}/cliente/{{clienteTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 19. Crear servicio temporal para CRUD
+# Esperado: 201
+# @name servicioTemporal
+POST {{host}}/servicio
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Temporal {{$guid}}",
+  "descripcion": "Servicio ficticio que será eliminado",
+  "activo": true
+}
+
+### 20. Listar servicios administrativos
+# Esperado: 200
+GET {{host}}/servicio
+Authorization: Bearer {{token}}
+
+### 21. Consultar servicio temporal
+# Esperado: 200
+GET {{host}}/servicio/{{servicioTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 22. Filtrar servicios con paginación
+# Esperado: 200
+GET {{host}}/servicio/filter/0/20
+Authorization: Bearer {{token}}
+
+### 23. Actualizar servicio temporal con PUT
+# Esperado: 200
+PUT {{host}}/servicio/{{servicioTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "descripcion": "Descripción temporal actualizada"
+}
+
+### 24. Eliminar servicio sin solicitudes ni cotizaciones
+# Esperado: 200
+DELETE {{host}}/servicio/{{servicioTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 25. Crear cuenta de cliente del escenario comercial
+# Esperado: 201
+# @name usuarioCliente
+POST {{host}}/usuario
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "username": "cli{{$randomInt 100000000 999999999}}",
+  "password": "Forestal2026!",
+  "nombre_completo": "Cliente de finca demostrativa",
+  "email": "{{$guid}}@example.test",
+  "rol_id": 3
+}
+
+### 26. Crear técnico del escenario comercial
+# Esperado: 201
+# @name usuarioTecnico
+POST {{host}}/usuario
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "username": "tec{{$randomInt 100000000 999999999}}",
+  "password": "Forestal2026!",
+  "nombre_completo": "Técnico de campo demostrativo",
+  "email": "{{$guid}}@example.test",
+  "rol_id": 2
+}
+
+### 27. Crear cliente vinculado a su cuenta
+# Esperado: 201
+# @name cliente
+POST {{host}}/cliente
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuario_id": {{usuarioCliente.response.body.$.data.id}},
+  "cedula": "DEMO-{{$timestamp}}-{{$randomInt 1000 9999}}",
+  "nombre_completo": "Finca demostrativa",
+  "email": "{{$guid}}@example.test",
+  "telefono": "2222-0000",
+  "direccion": "Sitio ficticio de demostración"
+}
+
+### 28. Crear servicio del escenario comercial
+# Esperado: 201
+# @name servicio
+POST {{host}}/servicio
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Inventario forestal {{$guid}}",
+  "descripcion": "Inventario forestal de finca demostrativa",
+  "activo": true
+}
+
+### 29. Recibir solicitud pública de cotización
+# Esperado: 201
+# @name solicitud
+POST {{host}}/public/solicitud
+Content-Type: application/json
+
+{
+  "servicio_id": {{servicioId}},
+  "nombre_completo": "Solicitante de prueba",
+  "email": "solicitud@example.test",
+  "telefono": "2222-0000",
+  "descripcion": "Solicito cotizar un inventario de la finca demostrativa"
+}
+
+### 30. Listar solicitudes recibidas
+# Esperado: 200
+GET {{host}}/solicitud
+Authorization: Bearer {{token}}
+
+### 31. Consultar solicitud creada
+# Esperado: 200
+GET {{host}}/solicitud/{{solicitud.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 32. Filtrar solicitudes con paginación
+# Esperado: 200
+GET {{host}}/solicitud/filter/0/20
+Authorization: Bearer {{token}}
+
+### 33. Crear cotización temporal en borrador
+# Esperado: 201
+# @name cotizacionTemporal
+POST {{host}}/cotizacion
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cliente_id": {{clienteId}},
+  "servicio_id": {{servicioId}},
+  "descripcion": "Borrador ficticio para eliminación",
+  "monto": "1000.00",
+  "moneda": "CRC"
+}
+
+### 34. Actualizar cotización temporal con PUT
+# Esperado: 200
+PUT {{host}}/cotizacion/{{cotizacionTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "descripcion": "Borrador corregido",
+  "monto": "2000.00"
+}
+
+### 35. Eliminar cotización que aún no se ha enviado
+# Esperado: 200
+DELETE {{host}}/cotizacion/{{cotizacionTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 36. Crear cotización comercial nueva
+# Esperado: 201
+# @name cotizacion
+POST {{host}}/cotizacion
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cliente_id": {{clienteId}},
+  "servicio_id": {{servicioId}},
+  "descripcion": "Inventario forestal de finca demostrativa",
+  "monto": "150000.00",
+  "moneda": "CRC",
+  "solicitud_id": {{solicitud.response.body.$.data.id}}
+}
+
+### 37. Listar cotizaciones
+# Esperado: 200
+GET {{host}}/cotizacion
+Authorization: Bearer {{token}}
+
+### 38. Consultar cotización comercial
+# Esperado: 200
+GET {{host}}/cotizacion/{{cotizacionId}}
+Authorization: Bearer {{token}}
+
+### 39. Filtrar cotizaciones con paginación
+# Esperado: 200
+GET {{host}}/cotizacion/filter/0/20
+Authorization: Bearer {{token}}
+
+### 40. Enviar cotización comercial
+# Esperado: 200
+POST {{host}}/cotizacion/{{cotizacionId}}/estado
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estado": "Enviada"
+}
+
+### 41. Aprobar cotización y crear proyecto
+# Esperado: 200
+# Crea un proyecto nuevo. Reaprobar la misma cotización devuelve ese mismo proyecto.
+# @name aprobacion
+POST {{host}}/cotizacion/{{cotizacionId}}/estado
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estado": "Aprobada"
+}
+
+### 42. Listar proyectos
+# Esperado: 200
+GET {{host}}/proyecto
+Authorization: Bearer {{token}}
+
+### 43. Consultar proyecto recién aprobado
+# Esperado: 200
+GET {{host}}/proyecto/{{proyectoId}}
+Authorization: Bearer {{token}}
+
+### 44. Filtrar proyectos con paginación
+# Esperado: 200
+GET {{host}}/proyecto/filter/0/20
+Authorization: Bearer {{token}}
+
+### 45. Actualizar nombre del proyecto con PUT
+# Esperado: 200
+PUT {{host}}/proyecto/{{proyectoId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Inventario forestal de finca demostrativa"
+}
+
+### 46. Asignar técnico antes de iniciar trabajo y facturar
+# Esperado: 200
+POST {{host}}/proyecto/{{proyectoId}}/tecnico
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tecnico_id": {{usuarioTecnico.response.body.$.data.id}}
+}
+
+### 47. Crear pago temporal pendiente
+# Esperado: 201
+# @name pagoTemporal
+POST {{host}}/pago
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "proyecto_id": {{proyectoId}},
+  "tipo": "Anticipo",
+  "monto": "1000.00",
+  "moneda": "CRC",
+  "estado": "Pendiente",
+  "fecha_pago": "2026-11-22T10:00:00-06:00",
+  "referencia": "TEMPORAL-ANULAR"
+}
+
+### 48. Consultar pago temporal
+# Esperado: 200
+GET {{host}}/pago/{{pagoTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 49. Actualizar pago pendiente con PUT
+# Esperado: 200
+PUT {{host}}/pago/{{pagoTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "monto": "2000.00",
+  "referencia": "TEMPORAL-CORREGIDO"
+}
+
+### 50. Anular pago temporal con DELETE
+# Esperado: 200
+# Devuelve estado Anulado; se conserva la trazabilidad y no suma a ingresos.
+DELETE {{host}}/pago/{{pagoTemporal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+
+### 51. Crear anticipo comercial pendiente
+# Esperado: 201
+# @name anticipo
+POST {{host}}/pago
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "proyecto_id": {{proyectoId}},
+  "tipo": "Anticipo",
+  "monto": "50000.00",
+  "moneda": "CRC",
+  "estado": "Pendiente",
+  "fecha_pago": "2026-11-22T10:00:00-06:00",
+  "referencia": "DEMO-ANTICIPO"
+}
+
+### 52. Confirmar anticipo con PUT
+# Esperado: 200
+# Tras recibirlo ya no se edita. No repetir el POST anterior para confirmar.
+PUT {{host}}/pago/{{anticipo.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estado": "Recibido"
+}
+
+### 53. Iniciar trabajo de campo
+# Esperado: 200
+POST {{host}}/proyecto/{{proyectoId}}/estado
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estado": "En campo",
+  "motivo": "Inicio del inventario"
+}
+
+### 54. Iniciar sesión independiente del técnico creado
+# Esperado: 200
+# @name loginTecnico
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{usuarioTecnico.response.body.$.data.username}}",
+  "password": "Forestal2026!"
+}
+
+### 55. Registrar visita nueva con ubicación
+# Esperado: 201
+# El UUID se genera aquí; el reintento siguiente usa el que respondió el servidor.
+# @name visita
+POST {{host}}/visita
+Authorization: Bearer {{tokenTecnico}}
+Content-Type: application/json
+
+{
+  "uuid": "{{$guid}}",
+  "proyecto_id": {{proyectoId}},
+  "fecha_captura": "2026-11-22T10:30:00-06:00",
+  "observaciones": "Observación ficticia del inventario forestal",
+  "latitud": 9.9,
+  "longitud": -84.1
+}
+
+### 56. Reintentar sincronización de la MISMA visita sin duplicar
+# Esperado: 200
+# @name reintentoVisita
+POST {{host}}/visita
+Authorization: Bearer {{tokenTecnico}}
+Content-Type: application/json
+
+{
+  "uuid": "{{visita.response.body.$.data.uuid}}",
+  "proyecto_id": {{proyectoId}},
+  "fecha_captura": "{{visita.response.body.$.data.fecha_captura}}",
+  "observaciones": "{{visita.response.body.$.data.observaciones}}",
+  "latitud": "{{visita.response.body.$.data.latitud}}",
+  "longitud": "{{visita.response.body.$.data.longitud}}"
+}
+
+### 57. Listar visitas del técnico
+# Esperado: 200
+GET {{host}}/visita
+Authorization: Bearer {{tokenTecnico}}
+
+### 58. Consultar visita por ID
+# Esperado: 200
+GET {{host}}/visita/{{visitaId}}
+Authorization: Bearer {{tokenTecnico}}
+
+### 59. Filtrar visitas con paginación
+# Esperado: 200
+GET {{host}}/visita/filter/0/20?proyecto_id={{proyectoId}}
+Authorization: Bearer {{tokenTecnico}}
+
+### 60. Consultar visita por UUID
+# Esperado: 200
+GET {{host}}/visita/uuid/{{visita.response.body.$.data.uuid}}
+Authorization: Bearer {{tokenTecnico}}
+
+### 61. Adjuntar foto ficticia con el técnico autor
+# Esperado: 201
+# @name foto
+POST {{host}}/visita/{{visitaId}}/evidencia
+Authorization: Bearer {{tokenTecnico}}
+Content-Type: multipart/form-data; boundary=ambientalBoundary
+
+--ambientalBoundary
+Content-Disposition: form-data; name="uuid"
+
+{{$guid}}
+--ambientalBoundary
+Content-Disposition: form-data; name="archivo"; filename="foto-prueba.png"
+Content-Type: image/png
+
+< ./archivos/foto-prueba.png
+--ambientalBoundary--
+
+
+### 62. Reintentar la MISMA foto sin duplicar
+# Esperado: 200
+# @name reintentoFoto
+POST {{host}}/visita/{{visitaId}}/evidencia
+Authorization: Bearer {{tokenTecnico}}
+Content-Type: multipart/form-data; boundary=ambientalBoundary
+
+--ambientalBoundary
+Content-Disposition: form-data; name="uuid"
+
+{{foto.response.body.$.data.evidencias[0].uuid}}
+--ambientalBoundary
+Content-Disposition: form-data; name="archivo"; filename="foto-prueba.png"
+Content-Type: image/png
+
+< ./archivos/foto-prueba.png
+--ambientalBoundary--
+
+
+### 63. Descargar fotografía protegida
+# Esperado: 200
+# @name descargaFoto
+GET {{host}}/evidencia/{{foto.response.body.$.data.evidencias[0].id}}
+Authorization: Bearer {{token}}
+
+### 64. Entregar informe después del trabajo de campo
+# Esperado: 200
+POST {{host}}/proyecto/{{proyectoId}}/estado
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estado": "Informe entregado",
+  "informe_referencia": "INF-DEMO-001"
+}
+
+### 65. Facturar después de entregar informe
+# Esperado: 200
+POST {{host}}/proyecto/{{proyectoId}}/estado
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estado": "Facturada",
+  "factura_referencia": "FAC-DEMO-001"
+}
+
+### 66. Crear pago final pendiente
+# Esperado: 201
+# @name pagoFinal
+POST {{host}}/pago
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "proyecto_id": {{proyectoId}},
+  "tipo": "Final",
+  "monto": "100000.00",
+  "moneda": "CRC",
+  "estado": "Pendiente",
+  "fecha_pago": "2026-11-22T15:00:00-06:00",
+  "referencia": "DEMO-FINAL"
+}
+
+### 67. Confirmar pago final con PUT
+# Esperado: 200
+# Anticipo 50000 + final 100000 = cotización de 150000 CRC.
+PUT {{host}}/pago/{{pagoFinal.response.body.$.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estado": "Recibido"
+}
+
+### 68. Listar pagos
+# Esperado: 200
+GET {{host}}/pago
+Authorization: Bearer {{token}}
+
+### 69. Filtrar pagos con paginación
+# Esperado: 200
+GET {{host}}/pago/filter/0/20?proyecto_id={{proyectoId}}
+Authorization: Bearer {{token}}
+
+### 70. Consultar proyecto facturado e historial
+# Esperado: 200
+GET {{host}}/proyecto/{{proyectoId}}
+Authorization: Bearer {{token}}
+
+### 71. Consultar ingresos del proyecto
+# Esperado: 200
+# @name ingresos
+GET {{host}}/reporte/ingresos?proyecto_id={{proyectoId}}
+Authorization: Bearer {{token}}
+
+### 72. Consultar proyectos por estado
+# Esperado: 200
+GET {{host}}/reporte/proyectos-estado?proyecto_id={{proyectoId}}
+Authorization: Bearer {{token}}
+
+### 73. Consultar visitas por proyecto y período
+# Esperado: 200
+GET {{host}}/reporte/visitas?proyecto_id={{proyectoId}}&desde=2026-11-22T00:00:00Z&hasta=2026-11-23T00:00:00Z
+Authorization: Bearer {{token}}
+
+### 74. Consultar puntos del mapa
+# Esperado: 200
+GET {{host}}/reporte/mapa?proyecto_id={{proyectoId}}
+Authorization: Bearer {{token}}
+
+### 75. Iniciar sesión del cliente vinculado
+# Esperado: 200
+# @name loginCliente
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{usuarioCliente.response.body.$.data.username}}",
+  "password": "Forestal2026!"
+}
+
+### 76. Consultar proyecto propio como cliente
+# Esperado: 200
+GET {{host}}/proyecto/{{proyectoId}}
+Authorization: Bearer {{loginCliente.response.body.$.token}}
+
+### 77. Cerrar sesión del cliente
+# Esperado: 200
+DELETE {{host}}/auth/logout/{{loginCliente.response.body.$.user.id}}
+Authorization: Bearer {{loginCliente.response.body.$.token}}
+
+### 78. Cerrar sesión del técnico
+# Esperado: 200
+DELETE {{host}}/auth/logout/{{loginTecnico.response.body.$.user.id}}
+Authorization: Bearer {{tokenTecnico}}
+
+### 79. Renovar sesión del administrador al final
+# Esperado: 200
+# @name renovarSesion
+POST {{host}}/auth/refresh
+Content-Type: application/json
+
+{
+  "tkRef": "{{login.response.body.$.tkRef}}"
+}
+
+### 80. Consultar sesión con el token renovado
+# Esperado: 200
+GET {{host}}/auth/me
+Authorization: Bearer {{renovarSesion.response.body.$.token}}
+
+### 81. Cerrar sesión del administrador con el token renovado
+# Esperado: 200
+DELETE {{host}}/auth/logout/{{renovarSesion.response.body.$.user.id}}
+Authorization: Bearer {{renovarSesion.response.body.$.token}}
